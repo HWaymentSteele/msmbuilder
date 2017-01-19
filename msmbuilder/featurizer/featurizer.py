@@ -1008,6 +1008,39 @@ class SASAFeaturizer(Featurizer):
         return md.shrake_rupley(traj, mode=self.mode, **self.kwargs)
 
 
+class DSSPFeaturizer(Featurizer):
+    """Featurizer based on Dictionary of protein secondary structure
+    (DSSP) assignments.
+
+    Currently just the simplified 3-category scheme. Returns the fraction
+    of residues that are H, E, or C.
+
+    The simplified DSSP codes are:
+
+    - 'H' : Helix. Either of the 'H', 'G', or 'I' codes.
+    - 'E' : Strand. Either of the 'E', or 'B' codes.
+    - 'C' : Coil. Either of the 'T', 'S' or ' ' codes.
+
+    A special 'NA' code will be assigned to each 'residue' in the topology which
+    isn't actually a protein residue (does not contain atoms with the names
+    'CA', 'N', 'C', 'O'), such as water molecules that are listed as 'residue's
+    in the topology.
+
+    Our implementation is based on DSSP-2.2.0, written by Maarten L. Hekkelman
+    and distributed under the Boost Software license.
+    """
+
+    def __init__(self):
+        pass
+
+    def partial_transform(self, traj):
+        dssp = md.compute_dssp(traj)
+        x = np.sum(dssp == 'H', axis=1) / float(dssp.shape[1])
+        y = np.sum(dssp == 'E', axis=1) / float(dssp.shape[1])
+        z = 1.0 - x - y
+        return np.transpose([x, y, z])
+
+
 class ContactFeaturizer(Featurizer):
     """Featurizer based on residue-residue distances.
 
