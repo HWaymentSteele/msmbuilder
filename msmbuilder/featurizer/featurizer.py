@@ -1009,6 +1009,7 @@ class SASAFeaturizer(Featurizer):
 
 
 class DSSPFeaturizer(Featurizer):
+    #HWS : first line needs to be one line, see other featurizers
     """Featurizer based on Dictionary of protein secondary structure
     (DSSP) assignments.
 
@@ -1029,9 +1030,16 @@ class DSSPFeaturizer(Featurizer):
     Our implementation is based on DSSP-2.2.0, written by Maarten L. Hekkelman
     and distributed under the Boost Software license.
     """
-
     def __init__(self):
         pass
+
+    # HWS: look at this if you want, see AlphaAngleFeaturizer
+    # def __init__(self, data_type):
+    #     self.data_type = data_type
+    #     pass
+
+    # def my_method(self):
+    #     self.data_type = 'all'
 
     def partial_transform(self, traj):
         dssp = md.compute_dssp(traj)
