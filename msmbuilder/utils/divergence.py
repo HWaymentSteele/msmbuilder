@@ -2,6 +2,18 @@ from __future__ import print_function, division, absolute_import
 import numpy as np
 from scipy.stats import entropy
 
+def expand_MSM_transition_matrix(msm,kmeans_mdl):
+
+#Expands MSM transition matrix (msm.transmat_) to include trimmed states by filling with zeros.
+    total_states=kmeans_mdl.n_clusters
+
+    new=np.zeros([total_states,total_states])
+
+    for k in msm.mapping_.keys():
+        for j in msm.mapping_.keys():
+            new[k,j]=msm.transmat_[msm.mapping_[k],msm.mapping_[j]]
+    
+
 def kl_divergence(P, Q, scalar=True):
     result = entropy(P.T, Q.T)
     if scalar:
