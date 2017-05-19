@@ -12,7 +12,7 @@ def expand_MSM_transition_matrix(msm,kmeans_mdl):
     for k in msm.mapping_.keys():
         for j in msm.mapping_.keys():
             new[k,j]=msm.transmat_[msm.mapping_[k],msm.mapping_[j]]
-    
+    return new
 
 def kl_divergence(P, Q, scalar=True):
     result = entropy(P.T, Q.T)
