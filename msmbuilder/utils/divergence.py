@@ -22,6 +22,21 @@ def kl_divergence(P, Q, scalar=True):
         return result
 
 
+def manual_kl_divergence(P, Q, scalar=True):
+    vec = []
+    for row in range(P.shape[0]):
+        temp = 0
+        for i, entry in enumerate(P[row]):
+            if entry*Q[row][i] != 0: # i.e. one or both is not zero
+                temp += entry * np.log(entry/Q[row][i])
+        vec.append(temp)
+    manual_kl = np.array(vec)
+    if scalar:
+        return np.sum(manual_kl)
+    else:
+        return manual_kl
+
+
 def sym_kl_divergence(P, Q, scalar=True):
     return kl_divergence(P,Q,scalar=scalar) + kl_divergence(Q,P,scalar=scalar)
 
