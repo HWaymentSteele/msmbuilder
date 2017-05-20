@@ -14,15 +14,15 @@ def expand_MSM_transition_matrix(msm,kmeans_mdl):
             new[k,j]=msm.transmat_[msm.mapping_[k],msm.mapping_[j]]
     return new
 
+#def kl_divergence(P, Q, scalar=True):
+#    result = entropy(P.T, Q.T)
+#    if scalar:
+#        return np.sum(result)
+#    else:
+#        return result
+
+
 def kl_divergence(P, Q, scalar=True):
-    result = entropy(P.T, Q.T)
-    if scalar:
-        return np.sum(result)
-    else:
-        return result
-
-
-def manual_kl_divergence(P, Q, scalar=True):
     vec = []
     for row in range(P.shape[0]):
         temp = 0
