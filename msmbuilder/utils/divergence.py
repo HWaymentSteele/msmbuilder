@@ -21,20 +21,32 @@ def expand_MSM_transition_matrix(msm,kmeans_mdl):
 #    else:
 #        return result
 
-
 def kl_divergence(P, Q, scalar=True):
     vec = []
-    for row in range(P.shape[0]):
+    for i in range(len(P)):
         temp = 0
-        for i, entry in enumerate(P[row]):
-            if entry*Q[row][i] != 0: # i.e. one or both is not zero
-                temp += entry * np.log(entry/Q[row][i])
+        if P[i]*Q[i] != 0: # i.e. one or both is not zero
+            temp += P[i] * np.log(P[i]/Q[i])
         vec.append(temp)
     manual_kl = np.array(vec)
     if scalar:
         return np.sum(manual_kl)
     else:
         return manual_kl
+
+#def kl_divergence(P, Q, scalar=True):
+#    vec = []
+#    for row in range(P.shape[0]):
+#        temp = 0
+#        for i, entry in enumerate(P[row]):
+#            if entry*Q[row][i] != 0: # i.e. one or both is not zero
+#                temp += entry * np.log(entry/Q[row][i])
+#        vec.append(temp)
+#    manual_kl = np.array(vec)
+#    if scalar:
+#        return np.sum(manual_kl)
+#    else:
+#        return manual_kl
 
 
 def sym_kl_divergence(P, Q, scalar=True):
