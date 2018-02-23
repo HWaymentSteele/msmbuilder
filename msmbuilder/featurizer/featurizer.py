@@ -790,20 +790,36 @@ class VonMisesFeaturizer(Featurizer):
         return np.hstack(x)
 
 class DSSPFeaturizer(Featurizer):
-    """Featurizer to classify secondary structure using the DSSP algorithm.
+    """Featurizer that classifies residues by secondary structure (SS) via the DSSP algorithm.
 
-    It can be useful to analyze intrinsically disordered proteins (IDPs) via a
-    secondary structure assignment.  Implements the DSSP structure
-    assignment. Kabsch W, Sander C (1983) Biopolymers 22 (12): 2577-637.
+    This computes a SS classification for each residue, using the DSSP algorithm
+    as implemented in MDTraj, and creates a one-hot encoding for each residue of
+    the available SS classes. Given K classes and R residues available for SS
+    classification, this gives us K * R binary features.
 
-    Returns a one-hot encoding of secondary structure
+    If there are caps on the ends of the protein, these return a 'NA' in the DSSP
+    calculation and are removed. Thus the number of residues returned may be two
+    less than you expect.
+
+    The one-hot encoding of secondary structure, which is intrinsically a categorical
+    variable, allows us to treat this input as a continuous variable for dimensionality
+    reduction and clustering.
+
+    DSSP algorithm reference: Kabsch W, Sander C (1983) Biopolymers 22 (12): 2577-637.
 
     Parameters
     ----------
 
     simplified : boolean, default = 'True'
 
-        'simplified' = False represents each residue with one of 8 assignment codes:
+        'simplified' = True: 3 classes are used for SS classification:
+
+       - 'H' : Helix. Either of the 'H', 'G', or 'I' codes (extended codes below).
+       - 'E' : Strand. Either of the 'E', or 'B' codes.
+       - 'C' : Coil. Either of the 'T', 'S' or ' ' codes.
+
+
+        'simplified' = False: 8 classes are used for SS classification:
 
        - 'H' : Alpha helix
        - 'B' : Residue in isolated beta-bridge
@@ -814,12 +830,6 @@ class DSSPFeaturizer(Featurizer):
        - 'S' : bend
        - ' ' : Loops and irregular elements
 
-        'simplified' = True uses the reduced set of assignment codes:
-
-       - 'H' : Helix. Either of the 'H', 'G', or 'I' codes.
-       - 'E' : Strand. Either of the 'E', or 'B' codes.
-       - 'C' : Coil. Either of the 'T', 'S' or ' ' codes.
-
     See Also
     --------
     mdtraj.compute_dssp
@@ -827,11 +837,10 @@ class DSSPFeaturizer(Featurizer):
 
     def __init__(self, simplified='True'):
         self.simplified = simplified
-        self.residue_indices = None
 
     def partial_transform(self, traj):
-        """Featurize an MD trajectory into a vector space via calculation
-        of secondary structure propensity per residue
+        """Featurize an MD trajectory into a vector space via calculating a
+        one-hot encoding of each residue's secondary structure classification.
 
         Parameters
         ----------
@@ -846,11 +855,15 @@ class DSSPFeaturizer(Featurizer):
             vector is computed by applying the featurization function
             to the `i`th snapshot of the input trajectory.
 
+            Here, n_features is number of residues available for SS classification
+            (caps are excluded) by the number of SS classes selected,
+            so n_residues x n_classes.
+
         """
         dssp = md.compute_dssp(traj, simplified = self.simplified)
 
         if 'NA' in np.transpose(dssp)[0]:
-            print('removing NAs at start and end of sequence, are these caps?')
+            print('removing NAs at start and end of sequence, likely caps.')
             dssp = dssp[:,1:-1]
 
         if self.simplified:
