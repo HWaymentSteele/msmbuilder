@@ -789,6 +789,83 @@ class VonMisesFeaturizer(Featurizer):
             x.extend(np.reshape(res, (1, -1, self.n_bins*y.shape[1]), order='F'))
         return np.hstack(x)
 
+class DSSPFeaturizer(Featurizer):
+    """Featurizer to classify secondary structure using the DSSP algorithm.
+
+    It can be useful to analyze intrinsically disordered proteins (IDPs) via a
+    secondary structure assignment.  Implements the DSSP structure
+    assignment. Kabsch W, Sander C (1983) Biopolymers 22 (12): 2577-637.
+
+    Returns a one-hot encoding of secondary structure
+
+    Parameters
+    ----------
+
+    simplified : boolean, default = 'True'
+
+        'simplified' = False represents each residue with one of 8 assignment codes:
+
+       - 'H' : Alpha helix
+       - 'B' : Residue in isolated beta-bridge
+       - 'E' : Extended strand, participates in beta ladder
+       - 'G' : 3-helix (3/10 helix)
+       - 'I' : 5 helix (pi helix)
+       - 'T' : hydrogen bonded turn
+       - 'S' : bend
+       - ' ' : Loops and irregular elements
+
+        'simplified' = True uses the reduced set of assignment codes:
+
+       - 'H' : Helix. Either of the 'H', 'G', or 'I' codes.
+       - 'E' : Strand. Either of the 'E', or 'B' codes.
+       - 'C' : Coil. Either of the 'T', 'S' or ' ' codes.
+
+    See Also
+    --------
+    mdtraj.compute_dssp
+    """
+
+    def __init__(self, simplified='True'):
+        self.simplified = simplified
+        self.residue_indices = None
+
+    def partial_transform(self, traj):
+        """Featurize an MD trajectory into a vector space via calculation
+        of secondary structure propensity per residue
+
+        Parameters
+        ----------
+        traj : mdtraj.Trajectory
+            A molecular dynamics trajectory to featurize.
+
+        Returns
+        -------
+        features : np.ndarray, dtype=float, shape=(n_samples, n_features)
+            A featurized trajectory is a 2D array of shape
+            `(length_of_trajectory x n_features)` where each `features[i]`
+            vector is computed by applying the featurization function
+            to the `i`th snapshot of the input trajectory.
+
+        """
+        dssp = md.compute_dssp(traj, simplified = self.simplified)
+
+        if 'NA' in np.transpose(dssp)[0]:
+            print('removing NAs at start and end of sequence, are these caps?')
+            dssp = dssp[:,1:-1]
+
+        if self.simplified:
+            assns = 'CEH'
+        else:
+            assns = 'HBEGITS '
+
+        # dictionary of vectors with one 1 and rest zeros, with same length of assignment,
+        # keyed by dssp assignment letter (H, E, etc.) Just one-hot encoding
+
+        oneHotAssignments = {x: np.identity(len(assns))[i] for i,x in enumerate(assns)}
+        newShape = [dssp.shape[0], dssp.shape[1] * len(assns)]
+        oneHotEncoding = np.array([oneHotAssignments[x] for x in dssp.ravel()]).reshape(newShape)
+
+        return oneHotEncoding
 
 class AlphaAngleFeaturizer(Featurizer):
     """Featurizer to extract alpha (dihedral) angles.
